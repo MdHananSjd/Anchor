@@ -155,3 +155,5 @@ mlflow.db
 # Data (Managed by DVC)
 data/raw/
 data/processed/
+
+.env
