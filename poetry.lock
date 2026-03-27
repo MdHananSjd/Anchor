@@ -3344,6 +3344,53 @@ optional = ["boto3", "cmaes (>=0.12.0)", "google-cloud-storage", "greenlet", "gr
 test = ["fakeredis[lua]", "greenlet", "grpcio", "kaleido (<0.4)", "moto", "protobuf (>=5.28.1)", "pytest", "pytest-xdist", "scipy (>=1.9.2)", "torch"]
 
 [[package]]
+name = "optuna-integration"
+version = "4.8.0"
+description = "Integration libraries of Optuna."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "optuna_integration-4.8.0-py3-none-any.whl", hash = "sha256:bb5c038702f744386b9032b12b993779b02e39e6893c324637178df68998f33d"},
+    {file = "optuna_integration-4.8.0.tar.gz", hash = "sha256:9f1e3053500a5a6a23f302cbd7ac371f6dd1010372b4b4374c538b8988bd0603"},
+]
+
+[package.dependencies]
+mlflow = {version = "*", optional = true, markers = "extra == \"mlflow\""}
+optuna = "*"
+
+[package.extras]
+allennlp = ["allennlp", "jsonnet", "numpy (<2.0.0)", "psutil"]
+botorch = ["botorch (<0.10.0)"]
+catboost = ["catboost", "numpy (<2.0.0)"]
+chainer = ["chainer", "numpy (<2.0.0)"]
+chainermn = ["chainermn", "numpy (<2.0.0)"]
+checking = ["black (<25.9.0)", "blackdoc (<0.4.2)", "hacking", "isort", "mypy", "types-PyYAML", "types-redis", "types-setuptools", "typing_extensions (>=3.10.0.0)"]
+cma = ["cma", "numpy (<2.0.0)"]
+comet = ["comet_ml (>=3.39.3)"]
+dask = ["distributed"]
+document = ["mlflow", "pandas", "scikit-learn (>=0.24.2)", "scipy (>=1.9.2) ; python_version >= \"3.9\"", "sphinx", "sphinx-notfound-page", "sphinx_rtd_theme"]
+fastai = ["fastai (>=2.0.0)"]
+fastaiv2 = ["fastai (>=2.0.0)", "fastcore (<1.12.2)"]
+keras = ["tensorflow"]
+lightgbm = ["lightgbm", "scikit-learn"]
+mlflow = ["mlflow"]
+mxnet = ["mxnet"]
+pytorch-distributed = ["gpytorch", "gpytorch"]
+pytorch-ignite = ["pytorch-ignite", "pytorch-ignite"]
+pytorch-lightning = ["lightning", "lightning"]
+shap = ["numpy (<2.0.0)", "shap"]
+sklearn = ["pandas", "scikit-learn", "scipy"]
+skorch = ["skorch"]
+tensorboard = ["tensorboard", "tensorflow"]
+tensorflow = ["tensorflow (<=2.15.0)"]
+test = ["coverage", "fakeredis[lua]", "grpcio", "protobuf (>=5.28.1)", "pytest"]
+tfkeras = ["tensorflow"]
+trackio = ["trackio"]
+wandb = ["wandb"]
+xgboost = ["xgboost"]
+
+[[package]]
 name = "orjson"
 version = "3.11.7"
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
@@ -5640,4 +5687,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "b8a728bbdb87eaca1911cefb56a056974fd89e83083ca9db6790ba090d42032c"
+content-hash = "afb7365f4a6bc7b31127864de8c3840b4667220cd08a430b407937589350c294"
