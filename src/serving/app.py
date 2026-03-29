@@ -82,7 +82,7 @@ def predict(request: ChurnRequest):
         training_cat_map = {}
 
         if isinstance(pc, list):
-            # If it's a list, it matches the indices of expected_features
+            #it matches the indices of expected_features if it is a list
             for i, categories in enumerate(pc):
                 if categories is not None:
                     training_cat_map[expected_features[i]] = categories
