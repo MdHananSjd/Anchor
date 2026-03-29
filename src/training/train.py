@@ -26,7 +26,8 @@ def train_model():
         # We drop the 'Answer Key' (leaky columns)
         leaky_cols = [
             'churn_date', 'reason_code', 'refund_amount_usd', 
-            'feedback_text', 'is_reactivation', 'churn_event_id'
+            'feedback_text', 'is_reactivation', 'churn_event_id',
+            'preceding_upgrade_flag', 'preceding_downgrade_flag'
         ]
         metadata_cols = ['account_id', 'account_name', 'signup_date', 'subscription_id', 'start_date', 'end_date']
         
