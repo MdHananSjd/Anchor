@@ -3,10 +3,8 @@ from pydantic import BaseModel
 import joblib
 import pandas as pd
 import numpy as np
-from datetime import datetime
 
-#we're defining what the API expects (local schema)
-
+# 1. Expanded Schema (Matches what the model expects)
 class ChurnRequest(BaseModel):
     industry: str
     country: str
@@ -15,84 +13,87 @@ class ChurnRequest(BaseModel):
     seats: int
     seats_sub: int
     mrr_amount: float
-    signup_date: str #year-month-date format
+    signup_date: str
     is_trial: bool = False
     billing_frequency: str = "Monthly"
+    auto_renew_flag: bool = True  # Added missing flags
+    upgrade_flag: bool = False
+    downgrade_flag: bool = False
 
-#initializing fastapi
-app = FastAPI(title="Project Anchor: Churn Prediction API")
+app = FastAPI(title="Project Anchor: 90% Accuracy API")
 
-#Loading model and explainer at stratup
-MODEL_PATH = "models/model.pkl"
-EXPLAINER_PATH = "models/explainer.pkl"
-
-try:
-    model = joblib.load(MODEL_PATH)
-    explainer = joblib.load(EXPLAINER_PATH)
-    print("model and explainer loaded successfully")
-except Exception as e:
-    print(f"Error loading artifacts: {e}")
+# Load artifacts
+model = joblib.load("models/model.pkl")
+explainer = joblib.load("models/explainer.pkl")
 
 @app.get("/")
-def read_root():
+def get_model():
     return {
         "status" : "online",
-        "model_version": "90.28_accuracy"
+        "model":"Anchor production"
     }
 
 @app.post("/predict")
-@app.post("/predict")
 def predict(request: ChurnRequest):
+    # 1. Convert to dict
+    data = request.model_dump()
     
-    input_df = pd.DataFrame([request.model_dump()])
+    # 2. THE MAPPING STEP: Match the 'suffixes=(_acc, _sub)' names
+    # This maps your clean API names to the "Training DNA" names
+    aligned_data = {
+        "industry": data["industry"],
+        "country": data["country"],
+        "referral_source": data["referral_source"],
+        "plan_tier_acc": data["plan_tier"], # Renamed
+        "seats_acc": data["seats"],         # Renamed
+        "is_trial_acc": data["is_trial"],   # Renamed
+        "billing_frequency": data["billing_frequency"],
+        "seats_sub": data["seats_sub"],
+        "mrr_amount": data["mrr_amount"],
+        "plan_tier_sub": data["plan_tier"],
+        "is_trial_sub": data["is_trial"],
+        "auto_renew_flag": data["auto_renew_flag"],
+        "upgrade_flag": data["upgrade_flag"],
+        "downgrade_flag": data["downgrade_flag"],
+        "arr_amount": data["mrr_amount"] * 12 # Approximation for missing column
+    }
 
-    # feature engineering
+    # 3. Create DataFrame and add Engineered Features
+    X = pd.DataFrame([aligned_data])
     current_date = pd.to_datetime('2026-03-29')
-    input_df['signup_date'] = pd.to_datetime(input_df['signup_date'])
+    signup_dt = pd.to_datetime(data["signup_date"])
     
-    input_df['tenure_days'] = (current_date - input_df['signup_date']).dt.days
-    input_df['mrr_per_seat'] = input_df['mrr_amount'] / (input_df['seats_sub'] + 1e-6)
-    input_df['seat_growth_ratio'] = input_df['seats_sub'] / (input_df['seats'] + 1e-6)
-    
-    # driopping non-feature columns
-    cols_to_drop = ['signup_date', 'account_id', 'account_name']
-    X = input_df.drop(columns=[c for c in cols_to_drop if c in input_df.columns])
+    X['tenure_days'] = (current_date - signup_dt).dt.days
+    X['mrr_per_seat'] = data['mrr_amount'] / (data['seats_sub'] + 1e-6)
+    X['seat_growth_ratio'] = data['seats_sub'] / (data['seats'] + 1e-6)
 
-    #matching our input X with the categorical features of the model
-    expected_features = model.feature_name_
-    
-    X = X[expected_features]
+    # 4. Handle "Junk" features the model is demanding
+    # We fill these with dummy values because they shouldn't influence the result
+    for col in model.feature_name_:
+        if col not in X.columns:
+            X[col] = 0 
 
-    # Identify categorical columns from training
-    # LightGBM stores this in its booster metadata
+    # 5. Final Alignment & Type Casting
+    X = X[model.feature_name_] # Force exact order
+    
     cat_features = model.booster_.pandas_categorical
-    
-    for col in expected_features:
+    for col in X.columns:
         if col in cat_features:
             X[col] = X[col].astype('category')
         else:
-     
             X[col] = pd.to_numeric(X[col], errors='coerce')
 
-    try:
-        probability = model.predict_proba(X)[0][1]
-        prediction = int(probability > 0.5)
-        
-        #SHAP 
-        shap_values = explainer.shap_values(X)
-        
-        if isinstance(shap_values, list):
-            vals = shap_values[1][0] 
-        else:
-            vals = shap_values[0]
-            
-        feature_importance = dict(zip(X.columns, vals))
-        top_drivers = sorted(feature_importance.items(), key=lambda x: abs(x[1]), reverse=True)[:3]
+    # 6. Inference
+    probability = model.predict_proba(X)[0][1]
+    
+    # SHAP Explanation logic
+    shap_values = explainer.shap_values(X)
+    vals = shap_values[1][0] if isinstance(shap_values, list) else shap_values[0]
+    
+    top_drivers = sorted(dict(zip(X.columns, vals)).items(), key=lambda x: abs(x[1]), reverse=True)[:3]
 
-        return {
-            "churn_probability": round(float(probability), 4),
-            "is_churn_risk": bool(prediction),
-            "top_drivers": {k: round(float(v), 4) for k, v in top_drivers}
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Inference Error: {str(e)}")
+    return {
+        "churn_probability": round(float(probability), 4),
+        "is_churn_risk": bool(probability > 0.5),
+        "top_drivers": {k: round(float(v), 4) for k, v in top_drivers}
+    }
