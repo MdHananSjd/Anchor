@@ -25,52 +25,40 @@ class DataLoader:
             logger.error("Failed to load file", file=file_name, error=str(e))
             raise
 
-    def get_full_dataset(self) -> pd.DataFrame:
-        """
-        Joins accounts, subscriptions, and churn events into a single 
-        refined dataframe with exactly one row per customer.
-        """
-        # load the tables
-        accounts = self.load_raw_csv('ravenstack_accounts')
-        subs = self.load_raw_csv('ravenstack_subscriptions')
-        events = self.load_raw_csv('ravenstack_churn_events')
+    def get_full_dataset(self):
+        # 1. Load the raw data
+        accounts = pd.read_csv(f"{settings.RAW_DATA_PATH}/ravenstack_accounts.csv")
+        subscriptions = pd.read_csv(f"{settings.RAW_DATA_PATH}/ravenstack_subscriptions.csv")
+        
+        # 2. Basic Join
+        df = pd.merge(accounts, subscriptions, on="account_id", suffixes=('_acc', '_sub'))
 
-        # Deduplicate subscriptions
-        # We sort by 'start_date' so the most recent subscription record 
-        # for each account is at the bottom, then we keep only that one.
-        subs_latest = subs.sort_values("start_date").drop_duplicates("account_id", keep="last")
+        # --- FEATURE ENGINEERING ---
+        
+        # A. Calculate Tenure (Days as a customer)
+        # Using 2026-03-29 as our "current" reference date
+        current_date = pd.to_datetime('2026-03-29')
+        df['signup_date'] = pd.to_datetime(df['signup_date'])
+        df['tenure_days'] = (current_date - df['signup_date']).dt.days
 
-        # Deduplicate events
-        # Similarly, we keep only the most recent churn event per account.
-        events_latest = events.sort_values("churn_date").drop_duplicates("account_id", keep="last")
+        # B. MRR Efficiency (Cost per Seat)
+        # We add a small 0.001 to avoid division by zero errors
+        df['mrr_per_seat'] = df['mrr_amount'] / (df['seats_sub'] + 0.001)
 
-        # Perform the Joins (1-to-1 Mapping)
-        # Join subscriptions to accounts
-        df = pd.merge(
-            accounts, 
-            subs_latest, 
-            on="account_id", 
-            how="left", 
-            suffixes=('', '_sub')  # Keep account columns clean
-        )
+        # C. Utilization Signal
+        # Ratio of subscription seats to initial account seats
+        df['seat_growth_ratio'] = df['seats_sub'] / (df['seats_acc'] + 0.001)
 
-        # Join churn events
-        df = pd.merge(df, events_latest, on="account_id", how="left")
-
-        # 5. Final Target Cleanup
-        # Ensure the churn_flag is a clean integer (0 or 1)
-        df["churn_flag"] = df["churn_flag"].fillna(0).astype(int)
-
-        # 6. Drop redundant columns to keep the feature set clean
-        cols_to_drop = ["churn_flag_sub"]
-        df = df.drop(columns=[c for c in cols_to_drop if c in df.columns])
-
-        logger.info("master_dataset_refined", 
-                    final_rows=len(df), 
-                    total_churners=df["churn_flag"].sum())
+        # 3. Cleanup: Drop duplicate churn flags and handle NaNs
+        # Ensure 'churn_flag' is the one from subscriptions (the target)
+        if 'churn_flag_sub' in df.columns:
+            df['churn_flag'] = df['churn_flag_sub']
+            df = df.drop(columns=['churn_flag_sub', 'churn_flag_acc'])
+        
+        df = df.fillna(0)
         
         return df
-    
+        
 if __name__ == "__main__":
     #to test the scripts directly
     loader = DataLoader()

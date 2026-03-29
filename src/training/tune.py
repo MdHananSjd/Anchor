@@ -71,7 +71,7 @@ def run_tuning():
         }
     )
 
-    study = optuna.create_study(study_name="churn_optimization", direction="maximize")
+    study = optuna.create_study(study_name="churn_optimization v2", direction="maximize")
     
     logger.info("tuning_started", n_trials=30)
     study.optimize(objective, n_trials=30, callbacks=[mlflc])
