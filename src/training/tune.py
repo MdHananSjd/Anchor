@@ -4,6 +4,7 @@ import lightgbm as lgb
 import mlflow
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import f1_score
 from src.shared.data_loader import DataLoader
 from src.shared.config import settings
 import structlog
@@ -17,7 +18,8 @@ def objective(trial):
     
     # 2. Strict Feature Selection (The 'Anti-Leak' List)
     leaky_cols = ['churn_date', 'reason_code', 'refund_amount_usd', 'feedback_text', 'is_reactivation', 'churn_event_id']
-    metadata_cols = ['account_id', 'account_name', 'signup_date', 'subscription_id', 'start_date', 'end_date']
+    # REMOVED tenure_days to avoid tenure bias (Day 1 customers cannot have churned in this dataset)
+    metadata_cols = ['account_id', 'account_name', 'signup_date', 'subscription_id', 'start_date', 'end_date', 'tenure_days']
     drop_list = leaky_cols + metadata_cols + ['churn_flag']
     
     X = df.drop(columns=[c for c in drop_list if c in df.columns])
@@ -39,7 +41,7 @@ def objective(trial):
         "max_depth": trial.suggest_int("max_depth", 3, 12),
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 50),
         "feature_fraction": trial.suggest_float("feature_fraction", 0.5, 1.0),
-        # REGULARIZATION: These help us hit 90% without overfitting
+        "is_unbalance": True, # Crucial for the 9% churn rate
         "lambda_l1": trial.suggest_float("lambda_l1", 1e-8, 10.0, log=True),
         "lambda_l2": trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True),
     }
@@ -54,9 +56,10 @@ def objective(trial):
 
         model = lgb.LGBMClassifier(**params)
         model.fit(X_train, y_train)
-        cv_scores.append(model.score(X_val, y_val))
+        preds = model.predict(X_val)
+        cv_scores.append(f1_score(y_val, preds))
 
-    # We return the average score across all 5 folds
+    # We return the average F1 score across all 5 folds
     return np.mean(cv_scores)
 
 def run_tuning():
@@ -65,20 +68,20 @@ def run_tuning():
     # Professional MLflow Callback Integration
     mlflc = MLflowCallback(
         tracking_uri=settings.MLFLOW_TRACKING_URI,
-        metric_name="avg_cv_accuracy",
+        metric_name="avg_cv_f1",
         mlflow_kwargs={
-            "experiment_name": "anchor-tuning-v2" 
+            "experiment_name": "anchor-tuning-v3" 
         }
     )
 
-    study = optuna.create_study(study_name="churn_optimization v2", direction="maximize")
+    study = optuna.create_study(study_name="churn_optimization v3", direction="maximize")
     
-    logger.info("tuning_started", n_trials=30)
-    study.optimize(objective, n_trials=30, callbacks=[mlflc])
+    logger.info("tuning_started", n_trials=20)
+    study.optimize(objective, n_trials=20, callbacks=[mlflc])
 
     print("\n" + "="*30)
     print("OPTIMIZATION COMPLETE")
-    print(f"Best CV Accuracy: {study.best_value:.4f}")
+    print(f"Best CV F1: {study.best_value:.4f}")
     print(f"Best Parameters: {study.best_params}")
     print("="*30)
 
