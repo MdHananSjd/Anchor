@@ -35,10 +35,7 @@ except Exception as e:
 
 @app.get("/")
 def health():
-    return {
-        "server": "online",
-        "status": "ready"
-    }
+    return {"status": "ready"}
 
 @app.post("/predict")
 def predict(request: ChurnRequest):
@@ -86,7 +83,6 @@ def predict(request: ChurnRequest):
 
         if isinstance(pc, list):
             #it matches the indices of expected_features if it is a list
-
             for i, categories in enumerate(pc):
                 if categories is not None:
                     training_cat_map[expected_features[i]] = categories

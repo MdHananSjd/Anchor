@@ -18,7 +18,7 @@ def train_final_model():
 
         #Remove target and specific metadata
         leaky_cols = ['churn_date', 'reason_code', 'refund_amount_usd', 'feedback_text', 'is_reactivation', 'churn_event_id']
-        metadata_cols = ['account_id', 'account_name', 'subscription_id', 'start_date', 'end_date', 'tenure_days']
+        metadata_cols = ['account_id', 'account_name']
         drop_list = leaky_cols + metadata_cols + ['churn_flag']
         
         # Initial drop
@@ -35,19 +35,18 @@ def train_final_model():
         for col in X.select_dtypes(include=['object']).columns:
             X[col] = X[col].astype('category')
 
-        # 3. Use the WINNING Parameters (Optimized for F1 / Recall)
+        # 3. Use the WINNING Parameters
         winning_params = {
-            'n_estimators': 716,
-            'learning_rate': 0.006223328749655962,
-            'num_leaves': 63,
-            'max_depth': 4,
-            'min_child_samples': 7,
-            'feature_fraction': 0.9774030791560651,
-            'lambda_l1': 5.496574862659988e-08,
-            'lambda_l2': 0.0003141277143488467,
+            'n_estimators': 691,
+            'learning_rate': 0.024358803469473424,
+            'num_leaves': 23,
+            'max_depth': 8,
+            'min_child_samples': 14,
+            'feature_fraction': 0.9816884033369944,
+            'lambda_l1': 3.4181093146527703,
+            'lambda_l2': 0.009888798089753835,
             'objective': 'binary',
             'metric': 'binary_logloss',
-            'is_unbalance': True,
             'verbosity': -1
         }
 
