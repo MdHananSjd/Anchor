@@ -1,0 +1,5 @@
+.venv
+__pycache__
+.git
+.ipynb_checkpoints
+data/raw

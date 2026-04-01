@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: ancor-inference-api
+    ports:
+      - "8000;8000"
+    volumes:
+      - .:/app
+    environment:
+      - ENV=production
+      - MODEL_PATH = models/model.pkl
+    restart: always
+  
