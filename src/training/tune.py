@@ -10,6 +10,8 @@ import structlog
 
 logger = structlog.get_logger()
 
+from sklearn.metrics import f1_score
+
 def objective(trial):
     # 1. Load the 'Honest' Dataset
     loader = DataLoader()
@@ -39,12 +41,12 @@ def objective(trial):
         "max_depth": trial.suggest_int("max_depth", 3, 12),
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 50),
         "feature_fraction": trial.suggest_float("feature_fraction", 0.5, 1.0),
-        # REGULARIZATION: These help us hit 90% without overfitting
+        "is_unbalance": True, # Forcing unbalance handling for this dataset
         "lambda_l1": trial.suggest_float("lambda_l1", 1e-8, 10.0, log=True),
         "lambda_l2": trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True),
     }
 
-    # 4. 5-Fold Cross-Validation (The Truth Serum)
+    # 4. 5-Fold Cross-Validation
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     cv_scores = []
 
@@ -54,9 +56,9 @@ def objective(trial):
 
         model = lgb.LGBMClassifier(**params)
         model.fit(X_train, y_train)
-        cv_scores.append(model.score(X_val, y_val))
+        preds = model.predict(X_val)
+        cv_scores.append(f1_score(y_val, preds))
 
-    # We return the average score across all 5 folds
     return np.mean(cv_scores)
 
 def run_tuning():
@@ -65,20 +67,20 @@ def run_tuning():
     # Professional MLflow Callback Integration
     mlflc = MLflowCallback(
         tracking_uri=settings.MLFLOW_TRACKING_URI,
-        metric_name="avg_cv_accuracy",
+        metric_name="avg_cv_f1",
         mlflow_kwargs={
-            "experiment_name": "anchor-tuning-v2" 
+            "experiment_name": "anchor-tuning-v3" 
         }
     )
 
-    study = optuna.create_study(study_name="churn_optimization v2", direction="maximize")
+    study = optuna.create_study(study_name="churn_optimization v3", direction="maximize")
     
-    logger.info("tuning_started", n_trials=30)
-    study.optimize(objective, n_trials=30, callbacks=[mlflc])
+    logger.info("tuning_started", n_trials=20)
+    study.optimize(objective, n_trials=20, callbacks=[mlflc])
 
     print("\n" + "="*30)
     print("OPTIMIZATION COMPLETE")
-    print(f"Best CV Accuracy: {study.best_value:.4f}")
+    print(f"Best CV F1 Score: {study.best_value:.4f}")
     print(f"Best Parameters: {study.best_params}")
     print("="*30)
 
