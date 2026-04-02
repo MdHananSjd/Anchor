@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import LoadingOverlay from './LoadingOverlay';
 
 const LOW_CHURN_PROFILE = {
   "industry": "Finance",
@@ -36,32 +37,49 @@ const HIGH_CHURN_PROFILE = {
 export default function Predictor() {
   const [jsonInput, setJsonInput] = useState(JSON.stringify(LOW_CHURN_PROFILE, null, 2));
   
-  const [isLoading, setIsLoading] = useState(false);
+  // Refactored state to accommodate LoadingOverlay
+  const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Clear success/error states after a few seconds so the overlay disappears
+  useEffect(() => {
+    let timeout;
+    if (status === 'success' || status === 'error') {
+      timeout = setTimeout(() => {
+        if (status === 'success') setStatus('idle');
+        // Let error persist slightly longer or user can dismiss it. 
+        // We'll set it to idle to clear the overlay, error text remains below button.
+        if (status === 'error') setStatus('idle');
+      }, 2000);
+    }
+    return () => clearTimeout(timeout);
+  }, [status]);
 
   const loadPreset = (profile) => {
     setJsonInput(JSON.stringify(profile, null, 2));
     setResult(null);
-    setError(null);
+    setErrorMessage('');
+    setStatus('idle');
   };
 
   const handlePredict = async () => {
-    setIsLoading(true);
-    setError(null);
+    setStatus('loading');
+    setErrorMessage('');
     setResult(null);
 
     let parsedData;
     try {
       parsedData = JSON.parse(jsonInput);
     } catch (e) {
-      setError("Please ensure valid JSON syntax before proceeding.");
-      setIsLoading(false);
+      setErrorMessage("Please ensure valid JSON syntax before proceeding.");
+      setStatus('error');
       return;
     }
 
     try {
-      await new Promise(r => setTimeout(r, 600));
+      // Added artificial delay slightly longer for visual confirmation if it's too fast locally
+      await new Promise(r => setTimeout(r, 800));
 
       const response = await fetch('/predict', {
         method: 'POST',
@@ -76,15 +94,17 @@ export default function Predictor() {
       }
 
       setResult(data);
+      setStatus('success');
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+      setErrorMessage(err.message);
+      setStatus('error');
     }
   };
 
+  const isProcessing = status === 'loading';
+
   return (
-    <div className="predictor-wrapper">
+    <div className="predictor-wrapper relative">
       <div className="predictor-header">
         <h1>Predictive Metrics.</h1>
         <p style={{ color: 'var(--color-text-secondary)' }}>Input customer telemetry directly to evaluate retention integrity.</p>
@@ -94,10 +114,10 @@ export default function Predictor() {
         {/* Left Column: Input Form */}
         <div className="dawn-card input-panel">
           <div className="preset-row">
-            <button className="preset-pill" onClick={() => loadPreset(LOW_CHURN_PROFILE)}>
+            <button className="preset-pill" onClick={() => loadPreset(LOW_CHURN_PROFILE)} disabled={isProcessing}>
               Simulate Secure Client
             </button>
-            <button className="preset-pill" onClick={() => loadPreset(HIGH_CHURN_PROFILE)}>
+            <button className="preset-pill" onClick={() => loadPreset(HIGH_CHURN_PROFILE)} disabled={isProcessing}>
               Simulate At-Risk Client
             </button>
           </div>
@@ -107,42 +127,39 @@ export default function Predictor() {
             value={jsonInput}
             onChange={(e) => setJsonInput(e.target.value)}
             spellCheck="false"
+            disabled={isProcessing}
           />
           
-          <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyItems: 'space-between', gap: '12px' }}>
             <button 
               className="btn btn-primary" 
               onClick={handlePredict}
-              disabled={isLoading}
+              disabled={isProcessing}
             >
-              Run Inference
+              {isProcessing ? 'Analyzing...' : 'Analyze Risk'}
             </button>
             
-            {error && (
+            {errorMessage && status === 'idle' && (
               <span style={{ color: 'var(--color-danger-strong)', fontSize: '0.85rem' }}>
-                {error}
+                {errorMessage}
               </span>
             )}
           </div>
         </div>
 
         {/* Right Column: Visualization */}
-        <div className="dawn-card results-panel">
+        <div className="dawn-card results-panel relative overflow-hidden">
           
-          {!result && !isLoading && (
+          {/* Injecting Loading Overlay here so it covers the results panel specifically */}
+          <LoadingOverlay status={status} errorMessage={errorMessage} />
+          
+          {!result && status === 'idle' && (
             <div className="loading-state">
               <p>Awaiting telemetry mapping...</p>
             </div>
           )}
 
-          {isLoading && (
-            <div className="loading-state">
-              <div className="spinner"></div>
-              <p>Evaluating weights securely...</p>
-            </div>
-          )}
-
-          {result && !isLoading && (
+          {result && (status === 'idle' || status === 'success') && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

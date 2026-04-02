@@ -1,15 +1,25 @@
 version: '3.8'
 
 services:
+  # The Backend API
   api:
     build: .
-    container_name: ancor-inference-api
+    container_name: anchor-inference-api
     ports:
-      - "8000;8000"
+      - "8000:8000"
     volumes:
       - .:/app
     environment:
       - ENV=production
-      - MODEL_PATH = models/model.pkl
+      - MODEL_PATH=models/model.pkl
     restart: always
-  
+
+  # The Frontend UI
+  frontend:
+    build: ./frontend
+    container_name: anchor-frontend
+    ports:
+      - "3000:80"  # Exposes port 3000 on your computer to port 80 in the container
+    depends_on:
+      - api
+    restart: always
