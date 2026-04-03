@@ -114,6 +114,7 @@ export default function Predictor() {
         {/* Left Column: Input Form */}
         <div className="dawn-card input-panel">
           <div className="preset-row">
+            Try some sample inputs:
             <button className="preset-pill" onClick={() => loadPreset(LOW_CHURN_PROFILE)} disabled={isProcessing}>
               Simulate Secure Client
             </button>

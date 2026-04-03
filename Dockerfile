@@ -38,4 +38,4 @@ RUN poetry install --no-interaction --no-ansi --no-root
 EXPOSE 8000
 
 # 11. Command to run the application
-CMD ["uvicorn", "src.serving.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.serving.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
