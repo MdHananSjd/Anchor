@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import pandas as pd
@@ -24,6 +25,15 @@ class ChurnRequest(BaseModel):
     downgrade_flag: bool = False
 
 app = FastAPI(title="Project Anchor: Ultra-Robust API")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 #loading the model and the explainer files
 try:

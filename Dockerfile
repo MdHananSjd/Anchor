@@ -4,7 +4,7 @@ FROM python:3.13-slim
 # 2. Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV POETRY_VERSION=1.8.2
+ENV POETRY_VERSION=2.0.1
 
 # 3. Set work directory
 WORKDIR /app
@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 5. Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VERSION
 ENV PATH="/root/.local/bin:$PATH"
 
 # 6. Copy only dependency files first (for better caching)
@@ -32,7 +32,7 @@ RUN poetry config virtualenvs.create false \
 COPY . /app/
 
 # 9. Final installation of the project itself
-RUN poetry install --no-interaction --no-ansi
+RUN poetry install --no-interaction --no-ansi --no-root
 
 # 10. Expose the port FastAPI runs on
 EXPOSE 8000
