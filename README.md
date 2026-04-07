@@ -24,6 +24,27 @@ We re-engineered the feature space to prioritize **Product Velocity** and **Seat
 
 ---
 
+## 🖥 Visual Interface & Explainable AI
+
+The Anchor console is designed for high-signal visibility, transforming complex telemetry into actionable attritional risk levels with real-time SHAP analysis.
+
+<p align="center">
+  <img src="docs/images/dashboard_main.png" width="800" alt="Anchor Main Dashboard">
+  <br>
+  <em>Figure 1: High-fidelity predictive console with real-time risk assessment.</em>
+</p>
+
+### 🔍 Explaining the Signal
+Anchor doesn't just provide a probability score; it breaks down the **Influence Drivers** behind every prediction. This allows CSM and Revenue teams to see exactly which features (e.g., `mrr_per_seat`, `seat_growth_ratio`) are pushing a customer toward churn.
+
+<p align="center">
+  <img src="docs/images/prediction.png" width="800" alt="Prediction page">
+  <br>
+  <em>Figure 2: Prediction with SHAP-based influence drivers providing transparent "Why" behind predictions.</em>
+</p>
+
+---
+
 ## 🏗 Architecture & Orchestration
 
 Anchor operates as a clean monorepo, orchestrating a polyglot stack designed for sub-second inference and production stability.
