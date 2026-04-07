@@ -37,9 +37,11 @@ app.add_middleware(
 
 #loading the model and the explainer files
 try:
-    model = joblib.load("models/model.pkl")
-    explainer = joblib.load("models/explainer.pkl")
-    print("System Online: Categorical Alignment Active.")
+    model_path = os.getenv("MODEL_PATH", "models/model.pkl")
+    explainer_path = os.getenv("EXPLAINER_PATH", "models/explainer.pkl")
+    model = joblib.load(model_path)
+    explainer = joblib.load(explainer_path)
+    print(f"System Online: Model loaded from {model_path}")
 except Exception as e:
     print(f"Load Error: {e}")
 

@@ -111,7 +111,7 @@ export default function Predictor() {
       </div>
 
       <div className="predictor-grid">
-        {/* Left Column: Input Form */}
+        {/* Left Column: Input Form */}x  
         <div className="dawn-card input-panel">
           <div className="preset-row">
             Try some sample inputs:

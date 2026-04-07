@@ -13,15 +13,15 @@ export default function LoadingOverlay({ status, errorMessage }) {
   const [messageIndex, setMessageIndex] = useState(0);
 
   useEffect(() => {
-    let interval;
     if (status === 'loading') {
-      interval = setInterval(() => {
+      const interval = setInterval(() => {
         setMessageIndex((prev) => (prev + 1) % MESSAGES.length);
       }, 3000);
-    } else {
-      setMessageIndex(0);
+      return () => {
+        clearInterval(interval);
+        setTimeout(() => setMessageIndex(0), 0);
+      };
     }
-    return () => clearInterval(interval);
   }, [status]);
 
   if (status === 'idle') return null;

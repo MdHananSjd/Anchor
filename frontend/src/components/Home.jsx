@@ -55,7 +55,7 @@ export default function Home() {
                     viewport={{ once: true, margin: "-100px" }}
                     transition={{ duration: 0.8 }}
                 >
-                    Anchor is not just another analytics dashboard. We sit at the intersection of raw data and predictive behavior. By unifying billing cycles and product usage into a single multi-dimensional tensor array, Anchor identifies the exact moment a customer loses momentum—days or weeks before they actually hit 'Cancel'.
+                    Anchor is not just another analytics dashboard. We sit at the intersection of raw data and predictive behavior. By unifying billing cycles and product usage, Anchor identifies the exact moment a customer loses momentum—days or weeks before they actually hit 'Cancel'.
                 </motion.p>
             </section>
 
