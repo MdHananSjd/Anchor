@@ -1,10 +1,14 @@
+import os
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    #this automatically finds the root of the project
-    #__file__ is the path to this script
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+    # BASE_DIR should point to where 'data/' and 'models/' are.
+    # Locally: backend/src/shared/config.py -> ../../../ (backend/)
+    # But data is at ../../../../ (root)
+    # In Docker: /app/src/shared/config.py -> ../../../ (/app/)
+    # here im prioritizing an environment variable if set
+    BASE_DIR: Path = Path(os.getenv("PROJECT_ROOT", Path(__file__).resolve().parent.parent.parent))
     
     PROJECT_NAME: str="Anchor"
     ENV: str="development"

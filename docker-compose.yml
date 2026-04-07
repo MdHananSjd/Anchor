@@ -3,23 +3,24 @@ version: '3.8'
 services:
   # The Backend API
   api:
-    build: .
+    build: ./backend
     container_name: anchor-inference-api
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
     environment:
       - ENV=production
       - MODEL_PATH=models/model.pkl
+      - PROJECT_ROOT=/app
     restart: always
 
   # The Frontend UI
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: anchor-frontend
     ports:
-      - "3000:80"  # Exposes port 3000 on your computer to port 80 in the container
+      - "3000:80"  # Exposes port 3000 on host to Nginx's port 80
     depends_on:
       - api
     restart: always

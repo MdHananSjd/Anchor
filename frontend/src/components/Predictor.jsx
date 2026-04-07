@@ -49,7 +49,7 @@ export default function Predictor() {
       timeout = setTimeout(() => {
         if (status === 'success') setStatus('idle');
         // Let error persist slightly longer or user can dismiss it. 
-        // We'll set it to idle to clear the overlay, error text remains below button.
+        // Setting it to idle to clear the overlay, error text remains below button.
         if (status === 'error') setStatus('idle');
       }, 2000);
     }
@@ -111,10 +111,10 @@ export default function Predictor() {
       </div>
 
       <div className="predictor-grid">
-        {/* Left Column: Input Form */}x  
+        {/* Left Column: Input Form */}
         <div className="dawn-card input-panel">
           <div className="preset-row">
-            Try some sample inputs:
+            Some sample inputs:
             <button className="preset-pill" onClick={() => loadPreset(LOW_CHURN_PROFILE)} disabled={isProcessing}>
               Simulate Secure Client
             </button>
