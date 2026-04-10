@@ -11,7 +11,7 @@ Anchor is a high-fidelity machine learning system engineered to map SaaS telemet
 
 ---
 
-## 🧠 The 'Signal vs. Noise' Philosophy
+## The 'Signal vs. Noise' Philosophy
 
 In the early stages of Anchor, the system reported a **99.8% Accuracy**. In a production SaaS environment, this is almost always a symptom of **Data Leakage**. 
 
