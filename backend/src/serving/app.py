@@ -24,12 +24,15 @@ class ChurnRequest(BaseModel):
     upgrade_flag: bool = False
     downgrade_flag: bool = False
 
-app = FastAPI(title="Project Anchor: Ultra-Robust API")
+app = FastAPI(title="Project Anchor: Churn Prediction API")
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://anchor-signal.up.railway.app",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
